@@ -74,6 +74,10 @@ verify_*.py
 !.claude/skills/
 !.claude/skills/**
 
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+
 # ignore static files
 static/
 /apps/dsa-desktop/dist/
