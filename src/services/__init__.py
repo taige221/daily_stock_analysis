@@ -22,6 +22,15 @@ def __getattr__(name: str):
         "StockService": "src.services.stock_service",
         "TaskService": "src.services.task_service",
         "get_task_service": "src.services.task_service",
+        "ThemeRegistryService": "src.services.theme_registry_service",
+        "ThemeEventScanner": "src.services.theme_event_scanner",
+        "ThemeStockPoolService": "src.services.theme_stock_pool_service",
+        "ThemeBoardResolverService": "src.services.theme_board_resolver_service",
+        "ThemeExpansionService": "src.services.theme_expansion_service",
+        "ThemeSignalService": "src.services.theme_signal_service",
+        "ThemePickerService": "src.services.theme_picker_service",
+        "ThemePickerTaskService": "src.services.theme_picker_task_service",
+        "get_theme_picker_task_service": "src.services.theme_picker_task_service",
     }
     if name in _lazy_map:
         import importlib
@@ -37,4 +46,13 @@ __all__ = [
     "StockService",
     "TaskService",
     "get_task_service",
+    "ThemeRegistryService",
+    "ThemeEventScanner",
+    "ThemeStockPoolService",
+    "ThemeBoardResolverService",
+    "ThemeExpansionService",
+    "ThemeSignalService",
+    "ThemePickerService",
+    "ThemePickerTaskService",
+    "get_theme_picker_task_service",
 ]

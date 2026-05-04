@@ -292,6 +292,12 @@ daily_stock_analysis/
 | `ENABLE_CHIP_DISTRIBUTION` | 启用筹码分布分析（该接口不稳定，云端部署建议关闭）。GitHub Actions 用户需在 Repository Variables 中设置 `ENABLE_CHIP_DISTRIBUTION=true` 方可启用；workflow 默认关闭。 | `true` | 可选 |
 | `ENABLE_EASTMONEY_PATCH` | 东财接口补丁：东财接口频繁失败（如 RemoteDisconnected、连接被关闭）时建议设为 `true`，注入 NID 令牌与随机 User-Agent 以降低被限流概率 | `false` | 可选 |
 | `REALTIME_SOURCE_PRIORITY` | 实时行情数据源优先级（逗号分隔），如 `tencent,akshare_sina,efinance,akshare_em` | 见 .env.example | 可选 |
+| `THEME_EXPANSION_QUERY_TIMEOUT` | 主题事件雷达在线扩池单次搜索超时（秒）；用于限制“概念股/龙头股”搜索挂起时间 | `8` | 可选 |
+| `THEME_BOARD_CACHE_TTL_SECONDS` | 主题板块结构化缓存 TTL（秒）；控制 `BKxxxx` / `000858.DC` 一类板块列表与成分股缓存有效期 | `21600` | 可选 |
+| `THEME_PICKER_TASK_HISTORY_RETENTION_DAYS` | 主题选股任务历史保留天数；超过保留期的已完成/失败记录会自动清理，`0` 表示关闭自动清理 | `30` | 可选 |
+| `THEME_PICKER_TASK_HISTORY_CLEANUP_BATCH_SIZE` | 主题选股任务历史单次自动清理批次大小 | `200` | 可选 |
+| `THEME_REALTIME_QUOTE_TIMEOUT` | 主题技术筛选单次实时行情总超时（秒）；到时后回退为仅使用日线缓存继续筛选 | `15` | 可选 |
+| `THEME_REALTIME_SOURCE_PRIORITY` | 主题技术筛选专用实时行情优先级；默认优先 `tencent`，避免主题回放先撞高门槛或全量型数据源 | `tencent,akshare_sina,efinance,akshare_em,tushare` | 可选 |
 | `ENABLE_FUNDAMENTAL_PIPELINE` | 基本面聚合总开关；关闭时仅返回 `not_supported` 块，不改变原分析链路 | `true` | 可选 |
 | `FUNDAMENTAL_STAGE_TIMEOUT_SECONDS` | 基本面阶段总时延预算（秒） | `1.5` | 可选 |
 | `FUNDAMENTAL_FETCH_TIMEOUT_SECONDS` | 单能力源调用超时（秒） | `0.8` | 可选 |

@@ -258,6 +258,12 @@ Default schedule: Every weekday at **18:00 (Beijing Time)** automatic execution.
 | `ENABLE_CHIP_DISTRIBUTION` | Enable chip distribution analysis (this API is unstable, recommended to disable for cloud deployment). GitHub Actions users must set `ENABLE_CHIP_DISTRIBUTION=true` in Repository Variables to enable; disabled by default in workflows. | `true` | Optional |
 | `ENABLE_EASTMONEY_PATCH` | Eastmoney API patch: Recommended to set to `true` when Eastmoney APIs fail frequently (e.g., RemoteDisconnected, connection closed). Injects NID tokens and random User-Agents to reduce rate limiting probability. | `false` | Optional |
 | `REALTIME_SOURCE_PRIORITY` | Real-time quote source priority (comma-separated), e.g., `tencent,akshare_sina,efinance,akshare_em` | See .env.example | Optional |
+| `THEME_EXPANSION_QUERY_TIMEOUT` | Per-query timeout in seconds for online theme expansion searches used by the theme event radar when scanning concept/leader stocks | `8` | Optional |
+| `THEME_BOARD_CACHE_TTL_SECONDS` | TTL in seconds for structured theme-board cache entries such as `BKxxxx` and `000858.DC` board lists and constituents | `21600` | Optional |
+| `THEME_PICKER_TASK_HISTORY_RETENTION_DAYS` | Retention window in days for theme-picker task history; completed/failed records older than this window are cleaned automatically, and `0` disables automatic cleanup | `30` | Optional |
+| `THEME_PICKER_TASK_HISTORY_CLEANUP_BATCH_SIZE` | Batch size for one automatic cleanup pass of theme-picker task history | `200` | Optional |
+| `THEME_REALTIME_QUOTE_TIMEOUT` | Total timeout in seconds for one realtime quote request inside theme screening; falls back to cached daily bars when exceeded | `15` | Optional |
+| `THEME_REALTIME_SOURCE_PRIORITY` | Theme-screening-specific realtime quote priority; defaults to `tencent` first to favor single-stock quote sources over heavier or higher-threshold providers | `tencent,akshare_sina,efinance,akshare_em,tushare` | Optional |
 | `ENABLE_FUNDAMENTAL_PIPELINE` | Master switch for fundamental aggregation; when disabled, returns `not_supported` block only, without altering the original analysis pipeline. | `true` | Optional |
 | `FUNDAMENTAL_STAGE_TIMEOUT_SECONDS` | Total latency budget for the fundamental stage (seconds) | `1.5` | Optional |
 | `FUNDAMENTAL_FETCH_TIMEOUT_SECONDS` | Timeout for a single capability source call (seconds) | `0.8` | Optional |

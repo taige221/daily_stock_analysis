@@ -844,6 +844,20 @@ class Config:
     realtime_cache_ttl: int = 600
     # 熔断器冷却时间（秒）
     circuit_breaker_cooldown: int = 300
+    # 主题扩池单次在线搜索超时（秒）
+    theme_expansion_query_timeout: float = 8.0
+    # 主题板块结构化结果缓存 TTL（秒）
+    theme_board_cache_ttl_seconds: int = 21600
+    # 主题选股历史保留天数（<=0 表示不自动清理）
+    theme_picker_task_history_retention_days: int = 30
+    # 主题选股历史单次清理批次大小
+    theme_picker_task_history_cleanup_batch_size: int = 200
+    # 主题技术筛选单次实时行情总超时（秒）
+    theme_realtime_quote_timeout: float = 15.0
+    # 主题技术筛选中腾讯实时行情专用超时（秒）
+    theme_tencent_quote_timeout: float = 15.0
+    # 主题技术筛选专用实时行情优先级（默认优先腾讯）
+    theme_realtime_source_priority: str = "tencent,akshare_sina,efinance,akshare_em,tushare"
 
     # === 基本面聚合开关与降级保护 ===
     # 全局总开关；关闭时返回 not_supported 并保持主流程无变化
@@ -1542,6 +1556,46 @@ class Config:
             realtime_source_priority=cls._resolve_realtime_source_priority(),
             realtime_cache_ttl=parse_env_int(os.getenv('REALTIME_CACHE_TTL'), 600, field_name='REALTIME_CACHE_TTL', minimum=0),
             circuit_breaker_cooldown=parse_env_int(os.getenv('CIRCUIT_BREAKER_COOLDOWN'), 300, field_name='CIRCUIT_BREAKER_COOLDOWN', minimum=0),
+            theme_expansion_query_timeout=parse_env_float(
+                os.getenv('THEME_EXPANSION_QUERY_TIMEOUT'),
+                8.0,
+                field_name='THEME_EXPANSION_QUERY_TIMEOUT',
+                minimum=1.0,
+            ),
+            theme_board_cache_ttl_seconds=parse_env_int(
+                os.getenv('THEME_BOARD_CACHE_TTL_SECONDS'),
+                21600,
+                field_name='THEME_BOARD_CACHE_TTL_SECONDS',
+                minimum=0,
+            ),
+            theme_picker_task_history_retention_days=parse_env_int(
+                os.getenv('THEME_PICKER_TASK_HISTORY_RETENTION_DAYS'),
+                30,
+                field_name='THEME_PICKER_TASK_HISTORY_RETENTION_DAYS',
+                minimum=0,
+            ),
+            theme_picker_task_history_cleanup_batch_size=parse_env_int(
+                os.getenv('THEME_PICKER_TASK_HISTORY_CLEANUP_BATCH_SIZE'),
+                200,
+                field_name='THEME_PICKER_TASK_HISTORY_CLEANUP_BATCH_SIZE',
+                minimum=1,
+            ),
+            theme_realtime_quote_timeout=parse_env_float(
+                os.getenv('THEME_REALTIME_QUOTE_TIMEOUT'),
+                15.0,
+                field_name='THEME_REALTIME_QUOTE_TIMEOUT',
+                minimum=1.0,
+            ),
+            theme_tencent_quote_timeout=parse_env_float(
+                os.getenv('THEME_TENCENT_QUOTE_TIMEOUT'),
+                15.0,
+                field_name='THEME_TENCENT_QUOTE_TIMEOUT',
+                minimum=1.0,
+            ),
+            theme_realtime_source_priority=os.getenv(
+                'THEME_REALTIME_SOURCE_PRIORITY',
+                'tencent,akshare_sina,efinance,akshare_em,tushare',
+            ),
             enable_fundamental_pipeline=os.getenv('ENABLE_FUNDAMENTAL_PIPELINE', 'true').lower() == 'true',
             fundamental_stage_timeout_seconds=parse_env_float(
                 os.getenv('FUNDAMENTAL_STAGE_TIMEOUT_SECONDS'),

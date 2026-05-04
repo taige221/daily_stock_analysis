@@ -8,6 +8,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 > For user-friendly release highlights, see the [GitHub Releases](https://github.com/ZhuLinsen/daily_stock_analysis/releases) page.
 
 ## [Unreleased]
+- [改进] `apps/dsa-web` 的“主题选股”页面新增“当前检索方式”说明，并在提交时只发送当前主查询字段，显式区分已注册主题、板块代码直检、板块名称检索和主题名称检索。
+- [改进] `theme-picker` 的历史恢复链路新增结果结构版本与修复标记，并将任务列表排序改为按最近活动时间而非创建时间，减少默认恢复到旧结果或错误“最新一条”的概率。
+- [改进] `theme-picker` 结果页新增数据源可信度与价格口径展示，可区分板块来源可信度、实时增强/混合/仅日线价格口径，以及历史结果是否经过兼容修复与关键位置补算。
+- [修复] `apps/dsa-web` 的“主题选股”页面在手动修改主题名称、板块代码或板块名称后，会清空旧的 `themeId`，避免仍按上一次已选主题（如 `deepseek`）执行检索。
+- [改进] `theme-picker` 结果聚合输出增强：`selected_stock` 现在直接携带真实的均线、偏离、现价、量比、换手率、共振数与数据完整度等指标，不再依赖空壳详情或前端占位推导。
+- [改进] `theme-picker` 的股票结果文案改为“正向入选理由 + 风险提示”双通道输出，并对数据来源标签做用户可读化处理，提升最终结果页的解释性。
+- [改进] `theme-picker` 的股票结果列表新增关键位置输出，每只股票可直接查看现价、支撑位与压力位，减少必须点开详情才能判断位置的成本。
+- [修复] `theme-picker` 读取旧历史结果时会基于本地日线数据补算现价、支撑位与压力位，避免历史记录因早期 payload 缺字段而看不到关键位置。
+- [改进] `apps/dsa-web` 的“主题选股”页面重构为更聚焦选股决策的布局：顶部改为主题概览 + 右侧筛选面板，中部改为候选股票卡片流 + 右侧 sticky 详情，减少表格感和信息墙感。
+- [改进] `apps/dsa-web` 的“主题选股”页面在首次进入且当前没有活动任务时，会默认恢复最近一条已完成历史记录的结果，直接展示上次查看的最新选股画面。
+- [改进] `apps/dsa-web` 的“主题选股”页面新增可编辑的“最大股票数量”输入，并与后端 `max_candidates` 参数联动，支持按用户指定数量执行筛选与历史恢复。
+- [修复] `theme-picker` 在同时传入 `board_code` 与等价 `board_name` 时不再重复扫描同一板块，结果聚合层也会按 `stock_code` 做最终去重，避免历史记录和结果页出现重复股票。
+- [修复] `theme-picker` 读取旧历史记录时会自动按 `stock_code` 清洗重复股票、修正候选数量并回写数据库，避免历史抽屉持续展示旧的重复结果。
+- [改进] `theme-picker` 异步任务新增重启恢复机制：服务启动后会自动重新入队数据库中遗留的 `pending/processing` 任务，避免重启后任务静默丢失。
+- [新功能] `theme-picker` 新增 `/api/v1/theme-picker/retry/{task_id}`，前端历史记录支持对已完成或失败的历史任务一键重新筛选。
+- [改进] `theme-picker` 新增任务历史自动清理策略，可通过 `THEME_PICKER_TASK_HISTORY_RETENTION_DAYS` 与 `THEME_PICKER_TASK_HISTORY_CLEANUP_BATCH_SIZE` 控制历史保留期与清理批次。
+- [改进] `theme-picker` 的任务历史改为持久化落库，服务重启后仍可通过 `/api/v1/theme-picker/history` 与历史入口查看过去的选股结果。
+- [新功能] `theme-picker` 新增历史记录入口与 `/api/v1/theme-picker/history` 接口，支持查看最近的主题选股任务摘要，并一键恢复过去查看过的选股结果。
+- [改进] `apps/dsa-web` 的“主题选股”页面轮询间隔调整为每 5 秒一次，降低异步任务状态查询频率。
+- [改进] `apps/dsa-web` 的“主题选股”页面按正式选股场景重构为“顶部筛选卡 + 主题理解卡 + 左侧优质股票表 + 右侧单票详情 + 底部数据来源说明”的结果页布局，不再以抽屉式实验台交互为主。
+- [改进] `/api/v1/theme-picker/scan` 改为异步任务接口，返回 `202 + task_id`，并新增 `/api/v1/theme-picker/status/{task_id}` 供前端轮询状态与最终结果，避免主题选股在超过 30 秒时被请求超时中断。
+- [改进] `apps/dsa-web` 的“主题选股”页面改为任务提交后自动轮询状态，筛选过程显示进度提示，任务完成后再渲染结果。
+- [测试] 新增 `tests/test_theme_picker_task_service.py`，覆盖主题选股异步任务完成并返回结果的基础行为。
+- [新功能] Web 前端新增一级页面 `/theme-picker` 与“主题选股”导航入口，支持读取已配置主题、按主题/板块发起筛选，并展示主题理解、优质股票列表、数据来源说明与单票详情抽屉。
+- [测试] 新增 `apps/dsa-web/src/pages/__tests__/ThemeStockPickerPage.test.tsx`，覆盖主题列表加载、触发筛选、结果展示与跳转问股的页面核心路径。
+- [新功能] 新增 `/api/v1/theme-picker/scan` 与 `/api/v1/theme-picker/themes`，支持 WebUI V1 按主题/板块执行主题选股并读取可用主题列表。
+- [改进] 新增 `ThemePickerService`，统一复用主题雷达主链路并聚合为前端可直接消费的主题理解、优质股票列表、单票详情与数据来源结构。
+- [测试] 新增 `tests/test_theme_picker_service.py`，覆盖主题选股响应聚合与可用主题列表的基础行为。
+- [文档] `frontendplan.md` 补充 WebUI V1 的入口设计、出口设计与导航放置建议，明确该能力应整合进当前 Web 并以“主题选股”正式页面提供。
+- [文档] `frontendplan.md` 补充当前 `apps/dsa-web/` 的一级路由/导航现状，并明确 `主题选股` 应作为新的一级路由 `/theme-picker` 挂在 `首页` 与 `问股` 之间。
+- [文档] 新增 `contractplan.md`，定义 WebUI V1 “主题选股”页与后端 API 之间的请求/响应字段契约、状态约定与前后端映射关系。
+- [文档] 新增 `backendplan.md`，明确 WebUI V1 “主题选股”页对应的后端 API、聚合服务、响应结构与实现顺序。
+- [文档] 新增 `frontendplan.md`，明确 WebUI V1 的“主题选股”页面定位、组件树、区块职责与实现优先级。
+- [新功能] 新增动态主题事件雷达 V1 基础模块，支持通过 `data/theme_registry.json` 配置主题、关键词与股票池，并提供示例注册表回退与独立脚本入口。
+- [改进] 主题事件雷达新增 `concept_aliases` 在线扩池能力，主题触发后会基于概念股/龙头股搜索扩展候选池，并在本地缺失日线时自动在线补数后再做技术筛选。
+- [改进] 主题事件雷达新增 `expansion_aliases` 窄口扩池入口；配置该字段后，在线扩池优先只使用强相关别名，避免 `AI算力`、`AI服务器` 一类泛板块关键词把候选池拉得过宽。
+- [改进] 主题事件雷达在线扩池新增单查询超时与调试日志，主题技术筛选默认启用实时行情并复用 `REALTIME_SOURCE_PRIORITY`，使量比/换手率优先按 `tencent > akshare_sina > efinance > akshare_em` 链路获取。
+- [改进] `scripts/run_theme_alert.py` 新增 `--max-expanded-candidates`，支持在主题回放时显式限制扩池后参与评估的股票数量，便于快速验证 `DeepSeek-V4` 等事件链路。
+- [文档] 新增 `THEME_EXPANSION_QUERY_TIMEOUT` 与 `THEME_REALTIME_QUOTE_TIMEOUT` 配置说明，并同步主题雷达在线扩池与实时筛选的行为文档。
+- [改进] 主题技术筛选新增 `THEME_REALTIME_SOURCE_PRIORITY`，默认独立于全局实时行情优先级，优先使用 `tencent` 获取单股量比与换手率，避免主题回放先撞 `tushare` 等高门槛源。
+- [改进] 主题扩池在达到 `max_expanded_candidates` 后会提前停止后续在线查询与新闻抽取，避免 `DeepSeek-V4` 等主题回放继续扫入过多候选。
+- [改进] 主题技术筛选新增 `THEME_TENCENT_QUOTE_TIMEOUT`，并将 `tencent` 专用超时透传到腾讯/新浪单股实时行情请求，减少主题层先超时、数据随后才返回的误伤。
+- [改进] 主题扩池默认仅保留 `SH/SZ/BJ` 候选，股票索引加载、名称匹配与候选合并阶段都会先过滤港股等非 A 股代码，避免 `DeepSeek` 一类 A 股主题误混入 `00762.HK` 等标的。
+- [改进] 主题扩池的股票名称匹配收紧为“标题优先”，不再直接用整段新闻摘要去扫全市场股票名，降低 `DeepSeek` 回放中 `600120.SH`、`000532.SZ` 一类弱相关 A 股被误扩进来的概率。
+- [改进] 主题扩池对非种子票新增相关性门槛：显式股票代码一次命中即可入围，仅靠标题名称匹配的个股需在多个独立条目里重复出现后才会进入最终候选，进一步减少概念股文章里一次性点名带来的弱相关噪音。
+- [改进] 主题扩池 V1 进一步收紧为“显式股票代码优先”模式：在线扫描只接受新闻文本中直接出现的 A 股代码作为非种子新增候选，不再依赖全市场股票名称模糊匹配扩池，避免 `DeepSeek` 概念文章标题把弱相关 A 股反复带入候选池。
+- [改进] 主题雷达新增概念板块成分股解析：支持在主题配置中直接声明 `concept_board_codes`，或仅提供 `concept_board_names` 先匹配东方财富概念板块代码，再以板块成分股作为主扩池来源。
+- [改进] 主题扩池调整为“板块成分股优先、文本搜索兜底”策略；当 `BK1188` 一类概念板块已成功解析时，不再继续执行文本扩池，减少 `DeepSeek` 回放中的弱相关噪音。
+- [改进] `scripts/run_theme_alert.py` 新增 `--board-code` 与 `--board-name` 入口，支持跳过新闻触发直接按概念板块成分股回放，便于临时验证 `BK1188` 一类板块。
+- [改进] 主题技术筛选默认将 `THEME_REALTIME_QUOTE_TIMEOUT` 与 `THEME_TENCENT_QUOTE_TIMEOUT` 提升到 `15s`，减少 `BK1188` 等板块回放中腾讯实时行情频繁超时导致的日线回退。
+- [改进] 主题板块解析新增本地缓存：东方财富概念板块列表与 `BK1188` 一类板块成分股成功获取后会写入 `data/theme_board_cache.json`，后续网络抖动时优先回退缓存，避免立即退回文本扩池。
+- [修复] 主题文本 fallback 仅接受能在本地股票 universe 中确认的 A 股代码，避免将 `885749` 这类非股票六位数字误当作候选继续补数。
+- [文档] 补全本地安装的 `nicepkg-ai-workflow-akshare` skill 使用说明，明确 CLI 模式、示例命令以及板块查询限制。
+- [改进] 主题板块解析新增 Tushare 东财题材兜底：当 `BKxxxx` 概念板块不可用时，支持通过 `000858.DC` 一类题材代码或 `AI应用` 一类题材名称获取成分股，并复用到主题雷达与 `run_theme_alert.py --board-code/--board-name` 链路。
+- [改进] 主题板块解析新增显式 `BKxxxx -> .DC` 映射与缓存 TTL：主题配置可直接声明东方财富板块到 Tushare 题材的回退关系，并通过 `THEME_BOARD_CACHE_TTL_SECONDS` 控制板块列表与成分股缓存有效期。
+- [改进] `run_theme_alert.py --board-code/--board-name` 现在会复用主题注册表中的板块映射配置；像 `BK1188` 这类临时板块回放也能继承 `BK1188 -> 000771.DC` 的结构化回退关系。
+- [改进] 新增全局板块映射表 `data/theme_board_mappings.json`：`ThemeBoardResolverService` 现在可直接复用 `BKxxxx -> .DC` 映射，不再依赖某个具体主题的局部配置。
+- [改进] 主题技术筛选新增 `strategy_mode=holding` 题材持有型口径：弱化量比/单日涨幅硬门槛，改为优先评估 `MA10/MA20` 结构、回踩位置与趋势评分，并支持 `run_theme_alert.py --strategy-mode holding` 临时切换。
+- [改进] 题材持有型口径新增 `holding_support_tolerance_pct` 支撑带：盘中轻微回踩 `MA20` 不再直接失去候选资格，更适合识别“趋势未坏但节奏回落”的观察票。
+- [改进] 题材持有型默认门槛再放松一小档：`holding_min_trend_score` 下调到 `50`，`MA20` 支持轻微走平回落，并允许收盘在 `MA20` 支撑带内继续保留候选资格。
 
 <!-- 新条目格式：- [类型] 描述（类型取值：新功能/改进/修复/文档/测试/chore）-->
 <!-- 每条独立一行追加到本段末尾，无需分类标题，合并时冲突最小 -->

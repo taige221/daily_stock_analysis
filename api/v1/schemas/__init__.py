@@ -91,6 +91,21 @@ from api.v1.schemas.portfolio import (
     PortfolioFxRefreshResponse,
     PortfolioRiskResponse,
 )
+from api.v1.schemas.theme_picker import (
+    ThemePickerTaskHistoryItemSchema,
+    ThemePickerTaskHistoryListResponse,
+    ThemePickerScanRequest,
+    ThemePickerQuerySchema,
+    ThemeInsightSchema,
+    ThemePickerStockItemSchema,
+    ThemePickerSelectedStockSchema,
+    ThemePickerSourceInfoSchema,
+    ThemePickerTaskAcceptedSchema,
+    ThemePickerTaskStatusSchema,
+    ThemePickerScanResponse,
+    ThemePickerThemeListItemSchema,
+    ThemePickerThemeListResponse,
+)
 
 __all__ = [
     # common
@@ -169,4 +184,18 @@ __all__ = [
     "PortfolioImportBrokerListResponse",
     "PortfolioFxRefreshResponse",
     "PortfolioRiskResponse",
+    # theme picker
+    "ThemePickerScanRequest",
+    "ThemePickerQuerySchema",
+    "ThemeInsightSchema",
+    "ThemePickerStockItemSchema",
+    "ThemePickerSelectedStockSchema",
+    "ThemePickerSourceInfoSchema",
+    "ThemePickerTaskAcceptedSchema",
+    "ThemePickerTaskStatusSchema",
+    "ThemePickerTaskHistoryItemSchema",
+    "ThemePickerTaskHistoryListResponse",
+    "ThemePickerScanResponse",
+    "ThemePickerThemeListItemSchema",
+    "ThemePickerThemeListResponse",
 ]

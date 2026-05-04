@@ -778,7 +778,12 @@ class AkshareFetcher(BaseFetcher):
         
         return df
     
-    def get_realtime_quote(self, stock_code: str, source: str = "em") -> Optional[UnifiedRealtimeQuote]:
+    def get_realtime_quote(
+        self,
+        stock_code: str,
+        source: str = "em",
+        timeout_seconds: float = 10,
+    ) -> Optional[UnifiedRealtimeQuote]:
         """
         获取实时行情数据（支持多数据源）
 
@@ -816,9 +821,9 @@ class AkshareFetcher(BaseFetcher):
                 return None
             # 普通 A 股：根据 source 选择数据源
             if source == "sina":
-                return self._get_stock_realtime_quote_sina(stock_code)
+                return self._get_stock_realtime_quote_sina(stock_code, timeout_seconds=timeout_seconds)
             elif source == "tencent":
-                return self._get_stock_realtime_quote_tencent(stock_code)
+                return self._get_stock_realtime_quote_tencent(stock_code, timeout_seconds=timeout_seconds)
             else:
                 return self._get_stock_realtime_quote_em(stock_code)
     
@@ -923,7 +928,12 @@ class AkshareFetcher(BaseFetcher):
             circuit_breaker.record_failure(source_key, str(e))
             return None
     
-    def _get_stock_realtime_quote_sina(self, stock_code: str) -> Optional[UnifiedRealtimeQuote]:
+    def _get_stock_realtime_quote_sina(
+        self,
+        stock_code: str,
+        *,
+        timeout_seconds: float = 10,
+    ) -> Optional[UnifiedRealtimeQuote]:
         """
         获取普通 A 股实时行情数据（新浪财经数据源）
         
@@ -950,7 +960,7 @@ class AkshareFetcher(BaseFetcher):
             )
             
             self._enforce_rate_limit()
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=timeout_seconds)
             response.encoding = 'gbk'
             api_elapsed = time.time() - api_start
             
@@ -1074,7 +1084,12 @@ class AkshareFetcher(BaseFetcher):
             circuit_breaker.record_failure(source_key, failure_message)
             return None
     
-    def _get_stock_realtime_quote_tencent(self, stock_code: str) -> Optional[UnifiedRealtimeQuote]:
+    def _get_stock_realtime_quote_tencent(
+        self,
+        stock_code: str,
+        *,
+        timeout_seconds: float = 10,
+    ) -> Optional[UnifiedRealtimeQuote]:
         """
         获取普通 A 股实时行情数据（腾讯财经数据源）
         
@@ -1101,7 +1116,7 @@ class AkshareFetcher(BaseFetcher):
             )
             
             self._enforce_rate_limit()
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=timeout_seconds)
             response.encoding = 'gbk'
             api_elapsed = time.time() - api_start
             

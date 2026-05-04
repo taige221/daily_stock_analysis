@@ -11,7 +11,10 @@ type ShellHeaderProps = {
 
 const TITLES: Record<string, { title: string; description: string }> = {
   '/': { title: '首页', description: '股票分析与历史报告工作台' },
+  // 主题选股
+  '/theme-picker': { title: '选股', description: '通过主题、板块与新闻筛选优质股票' },
   '/chat': { title: '问股', description: '多轮策略问答与历史会话管理' },
+  '/portfolio': { title: '持仓', description: '账户、持仓与风控视图' },
   '/backtest': { title: '回测', description: '回测任务与结果浏览' },
   '/settings': { title: '设置', description: '系统配置、模型与认证管理' },
 };

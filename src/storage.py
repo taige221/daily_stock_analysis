@@ -273,6 +273,45 @@ class AnalysisHistory(Base):
         }
 
 
+class ThemePickerTaskHistory(Base):
+    """
+    主题选股异步任务历史记录。
+
+    用于持久化 Web 端主题选股任务，支持服务重启后继续查看历史结果。
+    """
+    __tablename__ = 'theme_picker_task_history'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(String(64), nullable=False, unique=True, index=True)
+    status = Column(String(20), nullable=False, index=True)
+    progress = Column(Integer, nullable=False, default=0)
+    message = Column(Text)
+    error = Column(Text)
+    request_payload = Column(Text, nullable=False)
+    result_payload = Column(Text)
+    created_at = Column(DateTime, default=datetime.now, index=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True, index=True)
+
+    __table_args__ = (
+        Index('ix_theme_picker_task_created', 'created_at'),
+    )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'task_id': self.task_id,
+            'status': self.status,
+            'progress': self.progress,
+            'message': self.message,
+            'error': self.error,
+            'request_payload': self.request_payload,
+            'result_payload': self.result_payload,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+        }
+
+
 class BacktestResult(Base):
     """单条分析记录的回测结果。"""
 
@@ -1338,6 +1377,164 @@ class DatabaseManager:
             ).scalars().first()
             return result
 
+    def save_theme_picker_task_history(
+        self,
+        *,
+        task_id: str,
+        status: str,
+        progress: int,
+        request_payload: Dict[str, Any],
+        message: Optional[str] = None,
+        result_payload: Optional[Dict[str, Any]] = None,
+        error: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        started_at: Optional[datetime] = None,
+        completed_at: Optional[datetime] = None,
+    ) -> int:
+        """保存或更新主题选股任务历史。"""
+        now = datetime.now()
+        created_value = created_at or now
+        values = {
+            'task_id': task_id,
+            'status': status,
+            'progress': int(progress),
+            'message': message,
+            'error': error,
+            'request_payload': self._safe_json_dumps(request_payload or {}),
+            'result_payload': self._safe_json_dumps(result_payload) if result_payload is not None else None,
+            'created_at': created_value,
+            'started_at': started_at,
+            'completed_at': completed_at,
+        }
+
+        def _write(session: Session) -> int:
+            if self._is_sqlite_engine:
+                stmt = sqlite_insert(ThemePickerTaskHistory).values(values)
+                excluded = stmt.excluded
+                session.execute(
+                    stmt.on_conflict_do_update(
+                        index_elements=['task_id'],
+                        set_={
+                            'status': excluded.status,
+                            'progress': excluded.progress,
+                            'message': excluded.message,
+                            'error': excluded.error,
+                            'request_payload': excluded.request_payload,
+                            'result_payload': excluded.result_payload,
+                            'created_at': excluded.created_at,
+                            'started_at': excluded.started_at,
+                            'completed_at': excluded.completed_at,
+                        },
+                    )
+                )
+                return 1
+
+            existing = session.execute(
+                select(ThemePickerTaskHistory).where(ThemePickerTaskHistory.task_id == task_id)
+            ).scalars().first()
+            if existing is None:
+                session.add(ThemePickerTaskHistory(**values))
+                return 1
+
+            existing.status = values['status']
+            existing.progress = values['progress']
+            existing.message = values['message']
+            existing.error = values['error']
+            existing.request_payload = values['request_payload']
+            existing.result_payload = values['result_payload']
+            existing.created_at = values['created_at']
+            existing.started_at = values['started_at']
+            existing.completed_at = values['completed_at']
+            return 1
+
+        return self._run_write_transaction(
+            f"save_theme_picker_task_history[{task_id}]",
+            _write,
+        )
+
+    def get_theme_picker_task_history(self, task_id: str) -> Optional[ThemePickerTaskHistory]:
+        """根据 task_id 获取主题选股任务历史。"""
+        with self.get_session() as session:
+            return session.execute(
+                select(ThemePickerTaskHistory)
+                .where(ThemePickerTaskHistory.task_id == task_id)
+                .limit(1)
+            ).scalars().first()
+
+    def list_theme_picker_task_history(self, limit: int = 20) -> List[ThemePickerTaskHistory]:
+        """获取最近的主题选股任务历史。"""
+        with self.get_session() as session:
+            return list(
+                session.execute(
+                    select(ThemePickerTaskHistory)
+                    .order_by(desc(ThemePickerTaskHistory.created_at))
+                    .limit(max(1, limit))
+                ).scalars().all()
+            )
+
+    def list_theme_picker_task_history_by_statuses(
+        self,
+        statuses: List[str],
+        *,
+        limit: int = 50,
+    ) -> List[ThemePickerTaskHistory]:
+        """按状态获取主题选股任务历史。"""
+        normalized_statuses = [status for status in statuses if status]
+        if not normalized_statuses:
+            return []
+
+        with self.get_session() as session:
+            return list(
+                session.execute(
+                    select(ThemePickerTaskHistory)
+                    .where(ThemePickerTaskHistory.status.in_(normalized_statuses))
+                    .order_by(desc(ThemePickerTaskHistory.created_at))
+                    .limit(max(1, limit))
+                ).scalars().all()
+            )
+
+    def cleanup_theme_picker_task_history(
+        self,
+        *,
+        retention_days: int,
+        batch_size: int = 200,
+        terminal_statuses: Optional[List[str]] = None,
+    ) -> int:
+        """清理超出保留期的主题选股历史。"""
+        if retention_days <= 0 or batch_size <= 0:
+            return 0
+
+        statuses = terminal_statuses or ['completed', 'failed']
+        cutoff = datetime.now() - timedelta(days=retention_days)
+
+        with self.session_scope() as session:
+            stale_ids = list(
+                session.execute(
+                    select(ThemePickerTaskHistory.id)
+                    .where(
+                        ThemePickerTaskHistory.status.in_(statuses),
+                        func.coalesce(
+                            ThemePickerTaskHistory.completed_at,
+                            ThemePickerTaskHistory.created_at,
+                        ) < cutoff,
+                    )
+                    .order_by(
+                        func.coalesce(
+                            ThemePickerTaskHistory.completed_at,
+                            ThemePickerTaskHistory.created_at,
+                        ).asc()
+                    )
+                    .limit(max(1, batch_size))
+                ).scalars().all()
+            )
+            if not stale_ids:
+                return 0
+
+            session.execute(
+                delete(ThemePickerTaskHistory).where(ThemePickerTaskHistory.id.in_(stale_ids))
+            )
+            return len(stale_ids)
+
     def delete_analysis_history_records(self, record_ids: List[int]) -> int:
         """
         删除指定的分析历史记录。
@@ -1700,6 +1897,18 @@ class DatabaseManager:
             return json.dumps(data, ensure_ascii=False, default=str)
         except Exception:
             return json.dumps(str(data), ensure_ascii=False)
+
+    @staticmethod
+    def _safe_json_loads(data: Any) -> Any:
+        """安全解析 JSON 字符串。"""
+        if data is None:
+            return None
+        if isinstance(data, (dict, list)):
+            return data
+        try:
+            return json.loads(data)
+        except Exception:
+            return data
 
     @staticmethod
     def _build_raw_result(result: Any) -> Dict[str, Any]:
